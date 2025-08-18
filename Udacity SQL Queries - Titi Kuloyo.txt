@@ -1,0 +1,72 @@
+/* Query 1 */ -- Who are the top 20 customers by total spending in each Country?
+-- This query uses Left Join, aggregation, grouping, ordering and limit.
+-- Customer table is aliased as c, invoice table as i.
+
+SELECT c.CustomerId,
+       *c.FirstName || " " || c.LastName AS CustomerName,
+        * *c.Country,
+           * *ROUND(SUM(i.Total), 2) AS TotalSpending*
+FROM Customer c
+LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId
+GROUP BY c.CustomerId,
+         c.FirstName,
+         c.LastName,
+         c.Country
+ORDER BY TotalSpending DESC
+LIMIT 20;
+
+/* Query 2 */ --Which genre generates the highest revenue in each country?
+--Genre is aliased as c, Track as t, Invoice as i, InvoiceLine as IL
+
+SELECT *g.Name AS Genre,
+        * *i.BillingCountry,
+           * *ROUND(SUM(il.UnitPrice \* il.Quantity), 2) AS Revenue*
+FROM Genre g
+JOIN Track t *ON g.GenreId = t.GenreId*
+JOIN InvoiceLine il *ON t.TrackId = il.TrackId*
+JOIN Invoice i *ON il.InvoiceId = i.InvoiceId*
+GROUP BY g.Name,
+         i.BillingCountry
+ORDER BY Revenue DESC;
+
+/* Query 3 */ --What is the average invoice total per sales agent?
+-- Employee table is aliased as e, Customer as c, Invoice as i
+
+SELECT *e.EmployeeId,
+        * *e.FirstName || ' ' || e.LastName AS SalesAgent,
+           * *ROUND(AVG(i.Total), 2) AS AvgInvoiceTotal*
+FROM Employee e
+JOIN Customer c *ON e.EmployeeId = c.SupportRepId*
+JOIN Invoice i *ON c.CustomerId = i.CustomerId*
+GROUP BY e.EmployeeId,
+         SalesAgent *
+ORDER BY AvgInvoiceTotal DESC;
+
+/* Query 4 */* -- Which 10 artists have sold the most tracks, and how much revenue have they generated?
+-- Artist is aliased as ar, Album as al, Track as t, InvoiceLine as il
+
+SELECT *ar.Name AS ArtistName,
+        * *COUNT(il.InvoiceLineId) AS TracksSold,
+           * *ROUND(SUM(il.UnitPrice \* il.Quantity), 2) AS TotalRevenue*
+FROM Artist ar
+JOIN Album al *ON ar.ArtistId = al.ArtistId*
+JOIN Track t *ON al.AlbumId = t.AlbumId*
+JOIN InvoiceLine il *ON t.TrackId = il.TrackId*
+GROUP BY ar.Name
+ORDER BY TotalRevenue DESC *
+LIMIT 10;
+
+**/* Query 5 */ -- Customer is aliased as c, Invoice as I***
+-- Rank () is used to rank each customer based on total spending in their country with highest spender as rank 1. Partition By is used to assign ranking for each country.
+
+SELECT *c.Country,
+        * *c.FirstName || ' ' || c.LastName AS CustomerName,
+           * *ROUND(SUM(i.Total), 2) AS TotalSpent,
+              * *RANK() OVER (* *PARTITION BY c.Country* *
+                              ORDER BY SUM(i.Total) DESC* *) AS SpendingRank*
+FROM Customer c
+JOIN Invoice i *ON c.CustomerId = i.CustomerId*
+GROUP BY c.Country,
+         CustomerName
+ORDER BY c.Country,
+         SpendingRank;
